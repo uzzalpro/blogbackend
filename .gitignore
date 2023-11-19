@@ -1,0 +1,11 @@
+venv
+.idea
+.vscode
+*.pyc
+*.pyo
+__pycache__
+.DS_Store
+**/.DS_Store
+.env
+media
+frontend/node_modules
