@@ -3,13 +3,13 @@
 package routes
 
 import (
-	"blogbackend/controllers"
-	"database/sql"
-
 	"github.com/gin-gonic/gin"
+	"blogbackend/controllers" // Make sure to import your controllers package
+	"gorm.io/gorm"             // Import GORM if you are using it
 )
 
-func SetupPostRoutes(router *gin.Engine, db *sql.DB) {
+// SetupPostRoutes sets up routes related to posts
+func SetupPostRoutes(router *gin.Engine, db *gorm.DB) {
 	postController := controllers.NewPostController(db)
 
 	postRoutes := router.Group("/posts")
