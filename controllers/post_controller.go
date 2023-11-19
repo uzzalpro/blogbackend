@@ -45,28 +45,40 @@ func (pc *PostController) GetPost(c *gin.Context) {
 
 	views.JSON(c, http.StatusOK, post)
 }
-
 func (pc *PostController) CreatePost(c *gin.Context) {
-    var post models.Post
-    if err := c.ShouldBindJSON(&post); err != nil {
-        views.JSON(c, http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	// Try to bind JSON data
+	var post models.Post
+	if err := c.ShouldBindJSON(&post); err != nil {
+		// If JSON binding fails, try form data
+		if err := c.ShouldBind(&post); err != nil {
+			views.JSON(c, http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
 
-    // Assuming your Image field is a string representing the file path
-    // You might need to adjust this based on your actual data structure
-    uploadedFileName := fmt.Sprintf("uploads/%s", post.Image)
+	// Handle file upload
+	_, header, err := c.Request.FormFile("image")
+	if err == nil {
+		// Save the image to a folder (you might want to use a unique filename)
+		uploadedFileName := fmt.Sprintf("uploads/%s", header.Filename)
+		err = c.SaveUploadedFile(header, uploadedFileName)
+		if err != nil {
+			views.JSON(c, http.StatusInternalServerError, gin.H{"error": "Error saving the image"})
+			return
+		}
 
-    // Create a sql.NullString instance
-    nullString := sql.NullString{String: uploadedFileName, Valid: true}
+		// Set Image to a valid value
+		post.Image = sql.NullString{String: uploadedFileName, Valid: true}
+	} else {
+		// No image provided, set Image to NULL
+		post.Image = sql.NullString{Valid: false}
+	}
 
-    // Assign the sql.NullString instance to the post.Image field
-    post.Image = nullString
+	// Insert the post into the database
+	if err := pc.DB.Create(&post).Error; err != nil {
+		views.JSON(c, http.StatusInternalServerError, gin.H{"error": "Error inserting post into the database"})
+		return
+	}
 
-    if err := pc.DB.Create(&post).Error; err != nil {
-        views.JSON(c, http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-
-    views.JSON(c, http.StatusCreated, post)
+	views.JSON(c, http.StatusCreated, post)
 }

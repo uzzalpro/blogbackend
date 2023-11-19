@@ -15,3 +15,4 @@ type Post struct {
 	Image     sql.NullString `json:"image"`
 	CreatedAt string         `json:"created_at"`
 }
+
